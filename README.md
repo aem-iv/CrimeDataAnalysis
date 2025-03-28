@@ -35,7 +35,7 @@ You can install them using `pip`:
 
 ```bash
 pip install pandas matplotlib seaborn folium
-
+```
 ## Usage
 
 To clone this repository and get started, run the following commands:
@@ -43,9 +43,11 @@ To clone this repository and get started, run the following commands:
 1. Clone the repository:
    ```bash
    git clone https://github.com/aem-iv/CrimeDataAnalysis.git
+   ```
 2. Navigate into the project directory:
+   ```bash
    cd CrimeDataAnalysis
-
+   ```
 ## Visualizations
 
 - Crime Frequency by Hour: A bar plot showing how crime frequency varies by hour.
