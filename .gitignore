@@ -1,1 +1,8 @@
-__pycache__/*.pyc*.pyo.DS_Store*.envcrimeenv/
+crimeenv/
+crime_heatmap.html
+crime_cluster_map.html
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store
+*.env
