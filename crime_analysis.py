@@ -10,7 +10,7 @@ for geospatial analysis.
 Author: A. Martinez
 Created on: March 18, 2025
 """
-
+# %% Setup and Imports
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -18,7 +18,7 @@ import numpy as np
 import folium
 from folium.plugins import HeatMap, MarkerCluster
 
-
+# %% Load Data
 # Load crime data
 file_path = "crimedata.csv"
 df = pd.read_csv(file_path)
@@ -27,10 +27,18 @@ df = pd.read_csv(file_path)
 print(df.head(10))
 print(df.tail(10))
 
+
+# %% Data Preprocessing
 # Convert datetime column
 df['REPDATETIME'] = pd.to_datetime(df['REPDATETIME'], errors='coerce')
 
-# --- Frequency Analysis --- #
+# Extract time-based features
+df['Hour'] = df['REPDATETIME'].dt.hour
+df['DayOfWeek'] = df['REPDATETIME'].dt.dayofweek
+df['Month'] = df['REPDATETIME'].dt.month
+
+# %% Frequency Analysis
+
 # Identify the top 10 most common charges
 charge_counts = df['CHARGE_LITERAL'].value_counts().head(10)
 print("Most Common Charges:\n", charge_counts)
@@ -41,24 +49,15 @@ plt.xlabel("Charge")
 plt.ylabel("Frequency")
 plt.show()
 
-# --- Temporal Analysis --- #
+# %% Temporal Analysis
+
 # Crimes per month
 df.set_index('REPDATETIME').resample('M').size().plot(title='Crimes per Month')
 plt.xlabel("Month")
 plt.ylabel("Number of Crimes")
 plt.show()
 
-# Extract time-based features
-df['Hour'] = df['REPDATETIME'].dt.hour
-df['DayOfWeek'] = df['REPDATETIME'].dt.dayofweek
-df['Month'] = df['REPDATETIME'].dt.month
-
-# --- Crime Patterns by Time --- #
-# Crime frequency by hour
-crime_by_hour = df.groupby('Hour').size().reset_index(name='crime_count')
-crime_by_hour.plot(x='Hour', y='crime_count', kind='bar',
-                   title='Crime Frequency by Hour')
-plt.show()
+# %% Crime Patterns by Day and Hour
 
 # Crime frequency by day of the week
 day_mapping = {0: 'Monday', 1: 'Tuesday', 2: 'Wednesday', 3: 'Thursday',
@@ -69,7 +68,13 @@ crime_by_day.plot(x='DayOfWeek', y='crime_count',
                   kind='bar', title='Crime Frequency by Day')
 plt.show()
 
-# --- Crime Heatmap --- #
+# Crime frequency by hour
+crime_by_hour = df.groupby('Hour').size().reset_index(name='crime_count')
+crime_by_hour.plot(x='Hour', y='crime_count', kind='bar',
+                   title='Crime Frequency by Hour')
+plt.show()
+
+# %% Frequency Heatmap: Day vs Hour
 crime_by_day_hour = df.groupby(
     ['DayOfWeek', 'Hour']).size().unstack().fillna(0)
 crime_by_day_hour.index = [day_mapping[i]
@@ -82,7 +87,7 @@ plt.xlabel('Hour')
 plt.ylabel('Day')
 plt.show()
 
-# --- Time Period Analysis --- #
+# %% Time Period Analysis
 
 
 def categorize_time(hour):
@@ -124,23 +129,32 @@ ax.legend(title='Time Period')
 
 plt.show()
 
-# --- Geospatial Analysis --- #
-# set zoom for map generation
+# %% Geospatial Analysis - Heatmap
+
+# Compute map center and set zoom
+center_lat = df['LATITUDE'].dropna().median()
+center_lon = df['LONGITUDE'].dropna().median()
+
 zoom = 15
+
 # Heatmap
-h = folium.Map(location=[df['LATITUDE'].mode(),
-               df['LONGITUDE'].mode()], zoom_start=zoom)
-HeatMap(df[['LATITUDE', 'LONGITUDE']].dropna().values.tolist()).add_to(h)
+h = folium.Map(location=[center_lat, center_lon], zoom_start=zoom)
+
+heat_data = df[['LATITUDE', 'LONGITUDE']].dropna().values.tolist()
+HeatMap(heat_data).add_to(h)
 h.save('crime_heatmap.html')
+print("Saved: crime_heatmap.html")
 
+# %% Geospatial Analysis — Cluster Map
 
-# Crime cluster map
-m = folium.Map(location=[df['LATITUDE'].mode(),
-               df['LONGITUDE'].mode()], zoom_start=zoom)
+m = folium.Map(location=[center_lat, center_lon], zoom_start=zoom)
 marker_cluster = MarkerCluster().add_to(m)
-for _, row in df.iterrows():
+
+for _, row in df[['LATITUDE', 'LONGITUDE', 'CHARGE_LITERAL']].dropna().iterrows():
     folium.Marker(
         location=[row['LATITUDE'], row['LONGITUDE']],
         popup=f"Charge: {row['CHARGE_LITERAL']}"
     ).add_to(marker_cluster)
+
 m.save('crime_cluster_map.html')
+print("Saved: crime_cluster_map.html")
